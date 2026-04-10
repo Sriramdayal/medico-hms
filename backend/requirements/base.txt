@@ -1,0 +1,28 @@
+# Django Core
+Django==5.2
+psycopg2-binary==2.9.10
+
+# Django REST Framework
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.4.0
+django-cors-headers==4.6.0
+django-filter==24.3
+drf-spectacular==0.28.0
+
+# Celery
+celery==5.4.0
+redis==5.2.1
+
+# Security
+argon2-cffi==23.1.0
+cryptography==44.0.0
+
+# Database
+psycopg2-binary==2.9.10
+
+# Utilities
+python-dotenv==1.0.1
+Pillow==11.1.0
+
+# Testing (shared)
+factory-boy==3.3.1

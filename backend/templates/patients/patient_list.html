@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Patients — Medico HMS{% endblock %}
+{% block page_title %}Patients{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h2>Patient Registry</h2>
+            <p>{{ total_patients }} total patients in the system</p>
+        </div>
+        <div class="page-header-right">
+            <button class="btn btn-primary" data-modal="add-patient-modal">
+                <span class="material-icons-round">person_add</span>
+                New Patient
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card" style="margin-bottom: var(--space-5); padding: var(--space-4);">
+        <form method="get" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <input type="text" name="q" value="{{ request.GET.q }}" class="form-input" style="max-width:300px;" placeholder="Search by name or MRN...">
+            <select name="status" class="form-select" style="max-width:160px;">
+                <option value="">All Statuses</option>
+                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                <option value="deceased" {% if request.GET.status == 'deceased' %}selected{% endif %}>Deceased</option>
+            </select>
+            <select name="gender" class="form-select" style="max-width:140px;">
+                <option value="">All Genders</option>
+                <option value="male" {% if request.GET.gender == 'male' %}selected{% endif %}>Male</option>
+                <option value="female" {% if request.GET.gender == 'female' %}selected{% endif %}>Female</option>
+                <option value="other" {% if request.GET.gender == 'other' %}selected{% endif %}>Other</option>
+            </select>
+            <button type="submit" class="btn btn-outline btn-sm">
+                <span class="material-icons-round">filter_list</span> Filter
+            </button>
+            {% if request.GET.q or request.GET.status or request.GET.gender %}
+            <a href="{% url 'patient-list-view' %}" class="btn btn-outline btn-sm">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Patient Table -->
+    <div class="card">
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>MRN</th>
+                        <th>Patient Name</th>
+                        <th>Date of Birth</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Blood Type</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Registered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for patient in patients %}
+                    <tr onclick="window.location='{% url 'patient-detail-view' patient.pk %}'">
+                        <td style="font-family: monospace; color: var(--accent-primary);">{{ patient.mrn }}</td>
+                        <td>{{ patient.first_name }} {{ patient.last_name }}</td>
+                        <td>{{ patient.date_of_birth|date:"M d, Y" }}</td>
+                        <td>{{ patient.age }}</td>
+                        <td style="text-transform: capitalize;">{{ patient.gender }}</td>
+                        <td>{{ patient.blood_type|default:"—" }}</td>
+                        <td>{{ patient.phone|default:"—" }}</td>
+                        <td><span class="status-badge status-{{ patient.status }}">{{ patient.status }}</span></td>
+                        <td>{{ patient.created_at|date:"M d, Y" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <span class="material-icons-round">people</span>
+                                <h3>No patients found</h3>
+                                <p>Register your first patient to get started.</p>
+                                <button class="btn btn-primary" data-modal="add-patient-modal">
+                                    <span class="material-icons-round">person_add</span>
+                                    Register Patient
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if patients.has_other_pages %}
+        <div class="pagination">
+            {% if patients.has_previous %}
+            <a href="?page={{ patients.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">&laquo; Prev</a>
+            {% endif %}
+            {% for num in patients.paginator.page_range %}
+                {% if patients.number == num %}
+                    <span class="current">{{ num }}</span>
+                {% elif num > patients.number|add:'-3' and num < patients.number|add:'3' %}
+                    <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if patients.has_next %}
+            <a href="?page={{ patients.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Patient Modal -->
+<div class="modal-overlay" id="add-patient-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Register New Patient</h3>
+            <button class="modal-close"><span class="material-icons-round">close</span></button>
+        </div>
+        <form method="post" action="{% url 'patient-list-view' %}">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">First Name *</label>
+                    <input type="text" name="first_name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Last Name *</label>
+                    <input type="text" name="last_name" class="form-input" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Date of Birth *</label>
+                    <input type="date" name="date_of_birth" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Gender *</label>
+                    <select name="gender" class="form-select" required>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Blood Type</label>
+                    <select name="blood_type" class="form-select">
+                        <option value="">Unknown</option>
+                        <option value="A+">A+</option><option value="A-">A-</option>
+                        <option value="B+">B+</option><option value="B-">B-</option>
+                        <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                        <option value="O+">O+</option><option value="O-">O-</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="tel" name="phone" class="form-input" placeholder="555-0100">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-input" placeholder="patient@example.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Address</label>
+                <input type="text" name="address_line_1" class="form-input" placeholder="Street address">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">City</label>
+                    <input type="text" name="city" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">State</label>
+                    <input type="text" name="state" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Postal Code</label>
+                    <input type="text" name="postal_code" class="form-input">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline modal-close">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-icons-round">person_add</span>
+                    Register Patient
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

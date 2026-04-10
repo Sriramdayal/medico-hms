@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Appointments — Medico HMS{% endblock %}
+{% block page_title %}Appointments{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h2>Appointment Schedule</h2>
+            <p>{{ total_appointments }} appointments</p>
+        </div>
+        <div class="page-header-right">
+            <button class="btn btn-primary" data-modal="add-appointment-modal">
+                <span class="material-icons-round">add</span> New Appointment
+            </button>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:var(--space-5); padding:var(--space-4);">
+        <form method="get" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <select name="status" class="form-select" style="max-width:160px;">
+                <option value="">All Statuses</option>
+                {% for val, label in status_choices %}
+                <option value="{{ val }}" {% if request.GET.status == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <select name="type" class="form-select" style="max-width:180px;">
+                <option value="">All Types</option>
+                {% for val, label in type_choices %}
+                <option value="{{ val }}" {% if request.GET.type == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <input type="date" name="date" value="{{ request.GET.date }}" class="form-input" style="max-width:180px;">
+            <button type="submit" class="btn btn-outline btn-sm"><span class="material-icons-round">filter_list</span> Filter</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Type</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appt in appointments %}
+                    <tr>
+                        <td>
+                            <div style="font-weight:600;">{{ appt.scheduled_start|date:"M d, Y" }}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">{{ appt.scheduled_start|time:"h:i A" }} — {{ appt.scheduled_end|time:"h:i A" }}</div>
+                        </td>
+                        <td>
+                            <a href="{% url 'patient-detail-view' appt.patient.pk %}" style="font-weight:500;">
+                                {{ appt.patient.first_name }} {{ appt.patient.last_name }}
+                            </a>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">{{ appt.patient.mrn }}</div>
+                        </td>
+                        <td>Dr. {{ appt.doctor.last_name }}</td>
+                        <td style="text-transform:capitalize;">{{ appt.appointment_type }}</td>
+                        <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">{{ appt.reason|truncatewords:8 }}</td>
+                        <td><span class="status-badge status-{{ appt.status }}">{{ appt.get_status_display }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6">
+                        <div class="empty-state">
+                            <span class="material-icons-round">calendar_today</span>
+                            <h3>No appointments found</h3>
+                            <p>Schedule a new appointment to get started.</p>
+                        </div>
+                    </td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Appointment Modal -->
+<div class="modal-overlay" id="add-appointment-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Schedule Appointment</h3>
+            <button class="modal-close"><span class="material-icons-round">close</span></button>
+        </div>
+        <form method="post" action="{% url 'appointment-list-view' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Patient *</label>
+                <select name="patient" class="form-select" required>
+                    <option value="">Select patient...</option>
+                    {% for p in all_patients %}
+                    <option value="{{ p.pk }}">{{ p.mrn }} — {{ p.first_name }} {{ p.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Doctor *</label>
+                <select name="doctor" class="form-select" required>
+                    <option value="">Select doctor...</option>
+                    {% for d in doctors %}
+                    <option value="{{ d.pk }}">Dr. {{ d.get_full_name }} ({{ d.department }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Type *</label>
+                <select name="appointment_type" class="form-select" required>
+                    {% for val, label in type_choices %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Start *</label>
+                    <input type="datetime-local" name="scheduled_start" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">End *</label>
+                    <input type="datetime-local" name="scheduled_end" class="form-input" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Reason for Visit</label>
+                <textarea name="reason" class="form-textarea" rows="3" placeholder="Describe the reason for this appointment..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline modal-close">Cancel</button>
+                <button type="submit" class="btn btn-primary"><span class="material-icons-round">event</span> Schedule</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Medico HMS — Hospital Management System">
+    <title>{% block title %}Medico HMS{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if user.is_authenticated %}
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon material-icons-round">local_hospital</span>
+                    <span class="logo-text">Medico</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+                    <span class="material-icons-round">menu</span>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-section-title">Main</span>
+                    <a href="{% url 'dashboard' %}" class="nav-item {% if active_nav == 'dashboard' %}active{% endif %}">
+                        <span class="material-icons-round">dashboard</span>
+                        <span class="nav-label">Dashboard</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <span class="nav-section-title">Patient Care</span>
+                    <a href="{% url 'patient-list-view' %}" class="nav-item {% if active_nav == 'patients' %}active{% endif %}">
+                        <span class="material-icons-round">people</span>
+                        <span class="nav-label">Patients</span>
+                    </a>
+                    <a href="{% url 'appointment-list-view' %}" class="nav-item {% if active_nav == 'appointments' %}active{% endif %}">
+                        <span class="material-icons-round">calendar_today</span>
+                        <span class="nav-label">Appointments</span>
+                    </a>
+                    <a href="{% url 'encounter-list-view' %}" class="nav-item {% if active_nav == 'encounters' %}active{% endif %}">
+                        <span class="material-icons-round">medical_services</span>
+                        <span class="nav-label">Encounters</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <span class="nav-section-title">Clinical</span>
+                    <a href="{% url 'pharmacy-list-view' %}" class="nav-item {% if active_nav == 'pharmacy' %}active{% endif %}">
+                        <span class="material-icons-round">medication</span>
+                        <span class="nav-label">Pharmacy</span>
+                    </a>
+                    <a href="#" class="nav-item {% if active_nav == 'orders' %}active{% endif %}">
+                        <span class="material-icons-round">science</span>
+                        <span class="nav-label">Lab Orders</span>
+                    </a>
+                    <a href="#" class="nav-item {% if active_nav == 'billing' %}active{% endif %}">
+                        <span class="material-icons-round">receipt_long</span>
+                        <span class="nav-label">Billing</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <span class="nav-section-title">System</span>
+                    <a href="{% url 'audit-log-view' %}" class="nav-item {% if active_nav == 'audit' %}active{% endif %}">
+                        <span class="material-icons-round">security</span>
+                        <span class="nav-label">Audit Log</span>
+                    </a>
+                    {% if user.is_superuser %}
+                    <a href="/admin/" class="nav-item">
+                        <span class="material-icons-round">admin_panel_settings</span>
+                        <span class="nav-label">Admin</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        {{ user.first_name.0 }}{{ user.last_name.0 }}
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name">{{ user.get_full_name }}</span>
+                        <span class="user-role">{% if user.role %}{{ user.role.get_name_display }}{% else %}Staff{% endif %}</span>
+                    </div>
+                </div>
+                <a href="{% url 'logout-view' %}" class="nav-item logout-btn">
+                    <span class="material-icons-round">logout</span>
+                    <span class="nav-label">Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" id="mobile-menu-btn">
+                        <span class="material-icons-round">menu</span>
+                    </button>
+                    <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                </div>
+                <div class="top-bar-right">
+                    <div class="search-box">
+                        <span class="material-icons-round">search</span>
+                        <input type="text" placeholder="Search patients, MRN..." id="global-search">
+                    </div>
+                    <div class="top-bar-actions">
+                        <button class="icon-btn" title="Notifications">
+                            <span class="material-icons-round">notifications</span>
+                            <span class="badge">3</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-area">
+                {% if messages %}
+                <div class="messages-container">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}" role="alert">
+                        <span class="material-icons-round">
+                            {% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}
+                        </span>
+                        <span>{{ message }}</span>
+                        <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    {% else %}
+        {% block unauthenticated_content %}{% endblock %}
+    {% endif %}
+
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

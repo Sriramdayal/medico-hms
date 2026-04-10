@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Encounters — Medico HMS{% endblock %}
+{% block page_title %}Encounters{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h2>Clinical Encounters</h2>
+            <p>{{ total_encounters }} encounters</p>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:var(--space-5); padding:var(--space-4);">
+        <form method="get" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <select name="status" class="form-select" style="max-width:160px;">
+                <option value="">All Statuses</option>
+                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="discharged" {% if request.GET.status == 'discharged' %}selected{% endif %}>Discharged</option>
+            </select>
+            <select name="type" class="form-select" style="max-width:160px;">
+                <option value="">All Types</option>
+                <option value="inpatient" {% if request.GET.type == 'inpatient' %}selected{% endif %}>Inpatient</option>
+                <option value="outpatient" {% if request.GET.type == 'outpatient' %}selected{% endif %}>Outpatient</option>
+                <option value="emergency" {% if request.GET.type == 'emergency' %}selected{% endif %}>Emergency</option>
+            </select>
+            <button type="submit" class="btn btn-outline btn-sm"><span class="material-icons-round">filter_list</span> Filter</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Admission Date</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Type</th>
+                        <th>Chief Complaint</th>
+                        <th>LOS</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enc in encounters %}
+                    <tr onclick="window.location='{% url 'encounter-detail-view' enc.pk %}'">
+                        <td>{{ enc.admission_date|date:"M d, Y" }}</td>
+                        <td>
+                            <div style="font-weight:500;">{{ enc.patient.first_name }} {{ enc.patient.last_name }}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">{{ enc.patient.mrn }}</div>
+                        </td>
+                        <td>Dr. {{ enc.attending_doctor.last_name }}</td>
+                        <td style="text-transform:capitalize;">{{ enc.encounter_type }}</td>
+                        <td style="max-width:250px; overflow:hidden; text-overflow:ellipsis;">{{ enc.chief_complaint|truncatewords:10 }}</td>
+                        <td>{% if enc.length_of_stay is not None %}{{ enc.length_of_stay }}d{% else %}—{% endif %}</td>
+                        <td><span class="status-badge status-{{ enc.status }}">{{ enc.status }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7">
+                        <div class="empty-state">
+                            <span class="material-icons-round">medical_services</span>
+                            <h3>No encounters found</h3>
+                        </div>
+                    </td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

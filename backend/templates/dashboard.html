@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Medico HMS{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Welcome Banner -->
+    <div class="card" style="margin-bottom: var(--space-6); background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.05)); border-color: rgba(99,102,241,0.2);">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h2 style="font-size: 1.5rem; font-weight: 700;">Welcome back, Dr. {{ user.first_name }}!</h2>
+                <p style="color: var(--text-muted); margin-top: 4px;">Here's your hospital overview for today.</p>
+            </div>
+            <div style="font-size: var(--font-size-sm); color: var(--text-muted);">
+                <span class="material-icons-round" style="vertical-align: middle; font-size: 16px;">calendar_today</span>
+                {{ today|date:"l, F j, Y" }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card primary">
+            <div class="stat-card-top">
+                <div>
+                    <div class="stat-value" data-count="{{ stats.total_patients }}">0</div>
+                    <div class="stat-label">Total Patients</div>
+                </div>
+                <div class="stat-icon"><span class="material-icons-round">people</span></div>
+            </div>
+            <div class="stat-trend up">
+                <span class="material-icons-round" style="font-size:14px">trending_up</span>
+                +{{ stats.new_patients_today }} today
+            </div>
+        </div>
+
+        <div class="stat-card success">
+            <div class="stat-card-top">
+                <div>
+                    <div class="stat-value" data-count="{{ stats.todays_appointments }}">0</div>
+                    <div class="stat-label">Today's Appointments</div>
+                </div>
+                <div class="stat-icon"><span class="material-icons-round">calendar_today</span></div>
+            </div>
+            <div class="stat-trend up">
+                <span class="material-icons-round" style="font-size:14px">schedule</span>
+                {{ stats.upcoming_appointments }} upcoming
+            </div>
+        </div>
+
+        <div class="stat-card info">
+            <div class="stat-card-top">
+                <div>
+                    <div class="stat-value" data-count="{{ stats.active_encounters }}">0</div>
+                    <div class="stat-label">Active Encounters</div>
+                </div>
+                <div class="stat-icon"><span class="material-icons-round">medical_services</span></div>
+            </div>
+            <div class="stat-trend up">
+                <span class="material-icons-round" style="font-size:14px">local_hospital</span>
+                {{ stats.inpatient_count }} inpatient
+            </div>
+        </div>
+
+        <div class="stat-card warning">
+            <div class="stat-card-top">
+                <div>
+                    <div class="stat-value" data-count="{{ stats.pending_orders }}">0</div>
+                    <div class="stat-label">Pending Orders</div>
+                </div>
+                <div class="stat-icon"><span class="material-icons-round">science</span></div>
+            </div>
+            <div class="stat-trend down">
+                <span class="material-icons-round" style="font-size:14px">priority_high</span>
+                {{ stats.stat_orders }} STAT
+            </div>
+        </div>
+
+        <div class="stat-card teal">
+            <div class="stat-card-top">
+                <div>
+                    <div class="stat-value" data-count="{{ stats.active_prescriptions }}">0</div>
+                    <div class="stat-label">Active Prescriptions</div>
+                </div>
+                <div class="stat-icon"><span class="material-icons-round">medication</span></div>
+            </div>
+        </div>
+
+        <div class="stat-card danger">
+            <div class="stat-card-top">
+                <div>
+                    <div class="stat-value" data-count="{{ stats.critical_alerts }}">0</div>
+                    <div class="stat-label">Critical Alerts</div>
+                </div>
+                <div class="stat-icon"><span class="material-icons-round">warning</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-sidebar">
+        <!-- Recent Patients -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Recent Patients</h3>
+                    <p class="card-subtitle">Latest patient registrations</p>
+                </div>
+                <a href="{% url 'patient-list-view' %}" class="btn btn-outline btn-sm">View All</a>
+            </div>
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>MRN</th>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in recent_patients %}
+                        <tr onclick="window.location='{% url 'patient-detail-view' patient.pk %}'">
+                            <td>{{ patient.mrn }}</td>
+                            <td>{{ patient.first_name }} {{ patient.last_name }}</td>
+                            <td>{{ patient.age }}</td>
+                            <td style="text-transform: capitalize;">{{ patient.gender }}</td>
+                            <td><span class="status-badge status-{{ patient.status }}">{{ patient.status }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-muted);">No patients registered yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Today's Appointments -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Today's Schedule</h3>
+                    <p class="card-subtitle">Upcoming appointments</p>
+                </div>
+            </div>
+            {% for appt in todays_appointments %}
+            <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--surface-border);">
+                <div style="width:40px; height:40px; border-radius:10px; background:var(--accent-{% if appt.appointment_type == 'emergency' %}danger{% else %}info{% endif %}-soft); display:flex; align-items:center; justify-content:center;">
+                    <span class="material-icons-round" style="font-size:18px; color:var(--accent-{% if appt.appointment_type == 'emergency' %}danger{% else %}info{% endif %});">
+                        {% if appt.appointment_type == 'emergency' %}emergency{% else %}event{% endif %}
+                    </span>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-weight:600; font-size:0.875rem;">{{ appt.patient.first_name }} {{ appt.patient.last_name }}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">{{ appt.scheduled_start|time:"h:i A" }} — {{ appt.appointment_type|title }}</div>
+                </div>
+                <span class="status-badge status-{{ appt.status }}">{{ appt.status }}</span>
+            </div>
+            {% empty %}
+            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                <span class="material-icons-round" style="font-size: 32px; opacity: 0.3;">event_available</span>
+                <p style="margin-top: 8px; font-size: 0.875rem;">No appointments today</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

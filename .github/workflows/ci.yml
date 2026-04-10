@@ -1,0 +1,88 @@
+# ===========================================================================
+# Medico HMS — CI Pipeline
+# ===========================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: "3.12"
+  MONGODB_URI: "mongodb://localhost:27017/medico_test?replicaSet=rs0&directConnection=true"
+
+jobs:
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          pip install ruff mypy bandit
+      - name: Ruff lint
+        run: ruff check backend/
+      - name: Ruff format check
+        run: ruff format --check backend/
+      - name: Bandit security scan
+        run: bandit -r backend/apps/ -ll
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ping:1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r backend/requirements/dev.txt
+
+      - name: Initialize MongoDB Replica Set
+        run: |
+          mongosh --eval "rs.initiate({_id:'rs0', members:[{_id:0, host:'localhost:27017'}]})"
+
+      - name: Run tests with coverage
+        working-directory: backend
+        env:
+          DJANGO_SETTINGS_MODULE: medico.settings.dev
+          MONGODB_URI: ${{ env.MONGODB_URI }}
+          CELERY_BROKER_URL: redis://localhost:6379/0
+        run: |
+          pytest --cov=apps --cov-report=term-missing --cov-fail-under=80 -v
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/htmlcov/

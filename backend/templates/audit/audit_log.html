@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Audit Log — Medico HMS{% endblock %}
+{% block page_title %}Audit Log{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h2>🔒 HIPAA Audit Trail</h2>
+            <p>All access to Protected Health Information is logged</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                        <th>Resource</th>
+                        <th>IP Address</th>
+                        <th>Method</th>
+                        <th>Path</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in audit_logs %}
+                    <tr>
+                        <td>{{ log.timestamp|date:"M d, Y H:i:s" }}</td>
+                        <td style="font-weight:500;">{{ log.username }}</td>
+                        <td>{{ log.user_role|default:"—" }}</td>
+                        <td>
+                            <span class="status-badge {% if log.action == 'CREATE' %}status-active{% elif log.action == 'READ' %}status-scheduled{% elif log.action == 'UPDATE' %}status-pending{% elif log.action == 'DELETE' %}status-cancelled{% elif log.action == 'LOGIN' %}status-completed{% else %}status-pending{% endif %}">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td>{{ log.resource_type }}{% if log.resource_id %}: {{ log.resource_id|truncatechars:12 }}{% endif %}</td>
+                        <td style="font-family:monospace; font-size:0.75rem;">{{ log.ip_address|default:"—" }}</td>
+                        <td>{{ log.request_method }}</td>
+                        <td style="font-family:monospace; font-size:0.75rem; max-width:200px; overflow:hidden; text-overflow:ellipsis;">{{ log.request_path }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8"><div class="empty-state"><span class="material-icons-round">security</span><h3>No audit entries yet</h3><p>Activity will appear here as users interact with the system.</p></div></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

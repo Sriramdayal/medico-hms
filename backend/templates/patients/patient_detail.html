@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}{{ patient.full_name }} — Medico HMS{% endblock %}
+{% block page_title %}Patient Detail{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div style="margin-bottom: var(--space-4);">
+        <a href="{% url 'patient-list-view' %}" class="btn btn-outline btn-sm">
+            <span class="material-icons-round">arrow_back</span> Back to Patients
+        </a>
+    </div>
+
+    <!-- Patient Header -->
+    <div class="detail-header">
+        <div class="detail-avatar">{{ patient.first_name.0 }}{{ patient.last_name.0 }}</div>
+        <div class="detail-info" style="flex:1;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <h2>{{ patient.full_name }}</h2>
+                <span class="status-badge status-{{ patient.status }}">{{ patient.status }}</span>
+            </div>
+            <div class="detail-meta">
+                <span class="detail-meta-item"><span class="material-icons-round">badge</span> {{ patient.mrn }}</span>
+                <span class="detail-meta-item"><span class="material-icons-round">cake</span> {{ patient.date_of_birth|date:"M d, Y" }} ({{ patient.age }} yrs)</span>
+                <span class="detail-meta-item"><span class="material-icons-round">wc</span> {{ patient.gender|title }}</span>
+                {% if patient.blood_type %}
+                <span class="detail-meta-item"><span class="material-icons-round">bloodtype</span> {{ patient.blood_type }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <a href="{% url 'encounter-list-view' %}?patient={{ patient.pk }}" class="btn btn-primary btn-sm">
+                <span class="material-icons-round">add</span> New Encounter
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="tab-overview">Overview</button>
+        <button class="tab-btn" data-tab="tab-encounters">Encounters</button>
+        <button class="tab-btn" data-tab="tab-allergies">Allergies ({{ allergies|length }})</button>
+        <button class="tab-btn" data-tab="tab-prescriptions">Prescriptions</button>
+        <button class="tab-btn" data-tab="tab-contacts">Emergency Contacts</button>
+        <button class="tab-btn" data-tab="tab-insurance">Insurance</button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div class="tab-content active" id="tab-overview">
+        <div class="grid-2">
+            <div class="card">
+                <h3 class="card-title" style="margin-bottom:var(--space-4);">Demographics</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-item-label">Phone</div>
+                        <div class="info-item-value">{{ patient.phone|default:"Not provided" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-item-label">Email</div>
+                        <div class="info-item-value">{{ patient.email|default:"Not provided" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-item-label">Address</div>
+                        <div class="info-item-value">{{ patient.address_line_1|default:"Not provided" }}{% if patient.city %}, {{ patient.city }}{% endif %}{% if patient.state %}, {{ patient.state }}{% endif %} {{ patient.postal_code }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-item-label">Language</div>
+                        <div class="info-item-value">{{ patient.preferred_language }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-item-label">Marital Status</div>
+                        <div class="info-item-value">{{ patient.marital_status|default:"—" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-item-label">Occupation</div>
+                        <div class="info-item-value">{{ patient.occupation|default:"—" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title" style="margin-bottom:var(--space-4);">Quick Stats</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <div style="text-align:center; padding:16px; background:var(--accent-primary-soft); border-radius:var(--radius-md);">
+                        <div style="font-size:1.75rem; font-weight:800; color:var(--accent-primary);">{{ encounter_count }}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Encounters</div>
+                    </div>
+                    <div style="text-align:center; padding:16px; background:var(--accent-success-soft); border-radius:var(--radius-md);">
+                        <div style="font-size:1.75rem; font-weight:800; color:var(--accent-success);">{{ appointment_count }}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Appointments</div>
+                    </div>
+                    <div style="text-align:center; padding:16px; background:var(--accent-warning-soft); border-radius:var(--radius-md);">
+                        <div style="font-size:1.75rem; font-weight:800; color:var(--accent-warning);">{{ allergies|length }}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Allergies</div>
+                    </div>
+                    <div style="text-align:center; padding:16px; background:var(--accent-teal-soft); border-radius:var(--radius-md);">
+                        <div style="font-size:1.75rem; font-weight:800; color:var(--accent-teal);">{{ prescription_count }}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Prescriptions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Encounters Tab -->
+    <div class="tab-content" id="tab-encounters">
+        <div class="card">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>Date</th><th>Type</th><th>Doctor</th><th>Chief Complaint</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for enc in encounters %}
+                        <tr onclick="window.location='{% url 'encounter-detail-view' enc.pk %}'">
+                            <td>{{ enc.admission_date|date:"M d, Y" }}</td>
+                            <td style="text-transform:capitalize;">{{ enc.encounter_type }}</td>
+                            <td>{{ enc.attending_doctor.get_full_name }}</td>
+                            <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis;">{{ enc.chief_complaint }}</td>
+                            <td><span class="status-badge status-{{ enc.status }}">{{ enc.status }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-muted);">No encounters</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Allergies Tab -->
+    <div class="tab-content" id="tab-allergies">
+        <div class="card">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>Allergen</th><th>Type</th><th>Reaction</th><th>Severity</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for allergy in allergies %}
+                        <tr>
+                            <td>{{ allergy.allergen }}</td>
+                            <td style="text-transform:capitalize;">{{ allergy.allergy_type }}</td>
+                            <td>{{ allergy.reaction|truncatewords:10 }}</td>
+                            <td><span class="severity-badge severity-{{ allergy.severity }}">{{ allergy.severity }}</span></td>
+                            <td><span class="status-badge status-{{ allergy.status }}">{{ allergy.status }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-muted);">No known allergies (NKA)</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prescriptions Tab -->
+    <div class="tab-content" id="tab-prescriptions">
+        <div class="card">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>Drug</th><th>Dosage</th><th>Frequency</th><th>Route</th><th>Status</th><th>Prescribed</th></tr></thead>
+                    <tbody>
+                        {% for rx in prescriptions %}
+                        <tr>
+                            <td>{{ rx.drug.name }}</td>
+                            <td>{{ rx.dosage }}</td>
+                            <td>{{ rx.frequency }}</td>
+                            <td style="text-transform:capitalize;">{{ rx.route }}</td>
+                            <td><span class="status-badge status-{{ rx.status }}">{{ rx.status }}</span></td>
+                            <td>{{ rx.created_at|date:"M d, Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">No prescriptions</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Contacts Tab -->
+    <div class="tab-content" id="tab-contacts">
+        <div class="card">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>Name</th><th>Relationship</th><th>Phone</th><th>Email</th><th>Primary</th></tr></thead>
+                    <tbody>
+                        {% for contact in emergency_contacts %}
+                        <tr>
+                            <td>{{ contact.name }}</td>
+                            <td>{{ contact.relationship }}</td>
+                            <td>{{ contact.phone }}</td>
+                            <td>{{ contact.email|default:"—" }}</td>
+                            <td>{% if contact.is_primary %}<span class="status-badge status-active">Primary</span>{% else %}—{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-muted);">No emergency contacts</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Insurance Tab -->
+    <div class="tab-content" id="tab-insurance">
+        <div class="card">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>Provider</th><th>Policy #</th><th>Plan Type</th><th>Effective</th><th>Expiry</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for ins in insurances %}
+                        <tr>
+                            <td>{{ ins.provider_name }}</td>
+                            <td>{{ ins.policy_number }}</td>
+                            <td>{{ ins.plan_type|default:"—" }}</td>
+                            <td>{{ ins.effective_date|date:"M d, Y" }}</td>
+                            <td>{{ ins.expiry_date|date:"M d, Y"|default:"Ongoing" }}</td>
+                            <td>{% if ins.is_active %}<span class="status-badge status-active">Active</span>{% else %}<span class="status-badge status-inactive">Expired</span>{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">No insurance records</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
