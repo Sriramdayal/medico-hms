@@ -1,3 +1,12 @@
+---
+title: Medico HMS
+emoji: 🏥
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+---
+
 # 🏥 Medico — Hospital Management System
 
 > A comprehensive, HIPAA-aware Hospital Management System built with **Django 5.2**, **Django REST Framework**, and **MongoDB**.

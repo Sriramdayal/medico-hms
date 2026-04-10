@@ -11,24 +11,24 @@
 
 services:
   # --------------------------------------------------------------------------
-  # MongoDB 7 — Primary database (replica set for transactions)
+  # PostgreSQL 16 — Primary database
   # --------------------------------------------------------------------------
-  mongo:
-    image: mongo:7
-    container_name: medico-mongo
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+  db:
+    image: postgres:16-alpine
+    container_name: medico-db
+    environment:
+      POSTGRES_DB: medico
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
-      - "27017:27017"
+      - "5432:5432"
     volumes:
-      - mongo_data:/data/db
-      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: >
-        mongosh --eval "try { rs.status().ok } catch(e) { rs.initiate({_id:'rs0', members:[{_id:0, host:'mongo:27017'}]}).ok }"
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
-      timeout: 10s
+      timeout: 5s
       retries: 5
-      start_period: 30s
     restart: unless-stopped
 
   # --------------------------------------------------------------------------
@@ -66,11 +66,11 @@ services:
       - .env
     environment:
       - DJANGO_SETTINGS_MODULE=medico.settings.dev
-      - MONGODB_URI=mongodb://mongo:27017/medico?replicaSet=rs0&directConnection=true
+      - DB_HOST=db
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     depends_on:
-      mongo:
+      db:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -92,11 +92,11 @@ services:
       - .env
     environment:
       - DJANGO_SETTINGS_MODULE=medico.settings.dev
-      - MONGODB_URI=mongodb://mongo:27017/medico?replicaSet=rs0&directConnection=true
+      - DB_HOST=db
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     depends_on:
-      mongo:
+      db:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -118,16 +118,16 @@ services:
       - .env
     environment:
       - DJANGO_SETTINGS_MODULE=medico.settings.dev
-      - MONGODB_URI=mongodb://mongo:27017/medico?replicaSet=rs0&directConnection=true
+      - DB_HOST=db
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     depends_on:
-      mongo:
+      db:
         condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  mongo_data:
+  postgres_data:
   redis_data:
