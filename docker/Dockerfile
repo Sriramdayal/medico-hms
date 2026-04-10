@@ -15,7 +15,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libffi-dev \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
+
 
 # ---- Dependencies Stage ----
 FROM base AS dependencies
@@ -52,8 +54,8 @@ RUN mkdir -p /app/logs /app/staticfiles /app/media /var/log/medico
 
 # Collect static files
 RUN DJANGO_SETTINGS_MODULE=medico.settings.prod \
-    MONGODB_URI=mongodb://localhost:27017/medico \
     python manage.py collectstatic --noinput || true
+
 
 EXPOSE 8000
 
