@@ -6,7 +6,7 @@ services:
   - type: web
     name: medico-hms
     env: python
-    buildCommand: "cd backend && pip install -r requirements/prod.txt && python manage.py collectstatic --noinput && python manage.py migrate"
+    buildCommand: "cd backend && pip install -r requirements/prod.txt && DJANGO_SETTINGS_MODULE=medico.settings.prod python manage.py collectstatic --noinput && DJANGO_SETTINGS_MODULE=medico.settings.prod python manage.py migrate"
     startCommand: "cd backend && gunicorn medico.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
     envVars:
       - key: DJANGO_SETTINGS_MODULE

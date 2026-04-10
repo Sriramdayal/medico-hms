@@ -19,6 +19,20 @@ if _render_host:
     ALLOWED_HOSTS.append(_render_host)
 
 # --------------------------------------------------------------------------
+# Database — Force PostgreSQL via DATABASE_URL in production
+# --------------------------------------------------------------------------
+
+import dj_database_url  # noqa: E402
+
+_database_url = os.environ.get("DATABASE_URL")
+if _database_url:
+    DATABASES["default"] = dj_database_url.config(  # noqa: F405
+        default=_database_url,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+
+# --------------------------------------------------------------------------
 # Security hardening
 # --------------------------------------------------------------------------
 
@@ -43,7 +57,14 @@ CSRF_TRUSTED_ORIGINS = [
 # Static files — WhiteNoise (already in MIDDLEWARE from base.py)
 # --------------------------------------------------------------------------
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STORAGES = {  # noqa: F405
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # --------------------------------------------------------------------------
 # Remove browsable API in production
